@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     )
 
     # API Configuration
-    anthropic_api_key: str = Field(..., description="Anthropic API key")
+    anthropic_api_key: str = Field(default="", description="Anthropic API key")
 
     # Zotero Configuration (optional — not needed when using pre-built ChromaDB)
     zotero_db_path: Optional[Path] = Field(

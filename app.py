@@ -25,7 +25,7 @@ st.set_page_config(
 # --- Password gate ---
 def check_password():
     """Simple password gate for access control."""
-    access_password = os.environ.get("ACCESS_PASSWORD", "")
+    access_password = os.environ.get("ACCESS_PASSWORD", "") or st.secrets.get("ACCESS_PASSWORD", "")
     if not access_password:
         # No password configured — allow access (local dev)
         return True
@@ -50,6 +50,14 @@ if not check_password():
     st.stop()
 
 # --- Main app (only runs after authentication) ---
+
+# Inject Streamlit Cloud secrets into environment for pydantic-settings
+try:
+    for key, value in st.secrets.items():
+        if isinstance(value, str) and key not in os.environ:
+            os.environ[key] = value
+except Exception:
+    pass  # No secrets configured (local dev)
 
 from src.config.settings import settings
 from src.embeddings.vector_store import VectorStore
