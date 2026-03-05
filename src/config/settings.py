@@ -1,0 +1,114 @@
+"""Configuration settings for the Literature Expert Agent."""
+
+from pathlib import Path
+from typing import List, Optional
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    """Application settings loaded from environment variables."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="allow",  # Allow extra fields for compatibility with other projects
+    )
+
+    # API Configuration
+    anthropic_api_key: str = Field(..., description="Anthropic API key")
+
+    # Zotero Configuration (optional — not needed when using pre-built ChromaDB)
+    zotero_db_path: Optional[Path] = Field(
+        default=None,
+        description="Path to Zotero SQLite database",
+    )
+    zotero_storage_path: Optional[Path] = Field(
+        default=None,
+        description="Path to Zotero storage directory",
+    )
+
+    # Model Configuration
+    embedding_model: str = Field(
+        default="all-MiniLM-L6-v2",
+        description="Sentence-transformers model for embeddings",
+    )
+    llm_model: str = Field(
+        default="claude-3-5-sonnet-20250117",
+        description="Claude model for text generation",
+    )
+
+    # Vector Database
+    chromadb_path: Path = Field(
+        default=Path("./data/chromadb"),
+        description="Path to ChromaDB storage",
+    )
+
+    # Processing Configuration
+    chunk_size: int = Field(
+        default=1000,
+        description="Target chunk size in tokens",
+    )
+    chunk_overlap: int = Field(
+        default=200,
+        description="Overlap between chunks in tokens",
+    )
+    batch_size: int = Field(
+        default=32,
+        description="Batch size for embedding generation",
+    )
+
+    # Collections Configuration
+    zotero_collections: str = Field(
+        default="all",
+        description="Comma-separated list of collection names, or 'all'",
+    )
+
+    # Cache Configuration
+    cache_path: Path = Field(
+        default=Path("./data/cache"),
+        description="Path to cache directory",
+    )
+    logs_path: Path = Field(
+        default=Path("./data/logs"),
+        description="Path to logs directory",
+    )
+
+    # Retrieval Configuration
+    top_k: int = Field(
+        default=10,
+        description="Number of chunks to retrieve for Q&A",
+    )
+    similarity_threshold: float = Field(
+        default=0.5,
+        description="Minimum similarity score for retrieval",
+    )
+
+    # API Configuration
+    max_tokens: int = Field(
+        default=4000,
+        description="Maximum tokens for LLM generation",
+    )
+    temperature: float = Field(
+        default=0.7,
+        description="Temperature for LLM generation",
+    )
+
+    def get_collections_list(self) -> Optional[List[str]]:
+        """Parse collections string into list."""
+        if self.zotero_collections.lower() == "all":
+            return None
+        return [c.strip() for c in self.zotero_collections.split(",") if c.strip()]
+
+    def ensure_directories(self) -> None:
+        """Create necessary directories if they don't exist."""
+        self.chromadb_path.mkdir(parents=True, exist_ok=True)
+        self.cache_path.mkdir(parents=True, exist_ok=True)
+        self.logs_path.mkdir(parents=True, exist_ok=True)
+        (Path("./data/exports")).mkdir(parents=True, exist_ok=True)
+
+
+# Global settings instance
+settings = Settings()
