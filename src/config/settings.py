@@ -1,10 +1,26 @@
 """Configuration settings for the Literature Expert Agent."""
 
+import os
 from pathlib import Path
 from typing import List, Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _inject_streamlit_secrets():
+    """Inject Streamlit Cloud secrets into os.environ before Settings loads."""
+    try:
+        import streamlit as st
+        for key, value in st.secrets.items():
+            if isinstance(value, str) and key not in os.environ:
+                os.environ[key] = value
+    except Exception:
+        pass  # Not running on Streamlit Cloud, or no secrets configured
+
+
+# Inject secrets into env vars so pydantic-settings can find them
+_inject_streamlit_secrets()
 
 
 class Settings(BaseSettings):
@@ -36,7 +52,7 @@ class Settings(BaseSettings):
         description="Sentence-transformers model for embeddings",
     )
     llm_model: str = Field(
-        default="claude-3-5-sonnet-20250117",
+        default="claude-sonnet-4-5-20250514",
         description="Claude model for text generation",
     )
 
