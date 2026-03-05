@@ -22,10 +22,21 @@ st.set_page_config(
 )
 
 
+def _get_secret(key, default=""):
+    """Read a secret from env vars or st.secrets, handling missing secrets file."""
+    val = os.environ.get(key, "")
+    if not val:
+        try:
+            val = st.secrets.get(key, "")
+        except Exception:
+            val = ""
+    return val or default
+
+
 # --- Password gate ---
 def check_password():
     """Simple password gate for access control."""
-    access_password = os.environ.get("ACCESS_PASSWORD", "") or st.secrets.get("ACCESS_PASSWORD", "")
+    access_password = _get_secret("ACCESS_PASSWORD")
     if not access_password:
         # No password configured — allow access (local dev)
         return True
