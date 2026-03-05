@@ -1,14 +1,3 @@
----
-title: Criminal Governance Literature Expert
-emoji: "\U0001F4DA"
-colorFrom: red
-colorTo: blue
-sdk: streamlit
-sdk_version: 1.31.0
-app_file: app.py
-pinned: false
----
-
 # Criminal Governance Literature Expert
 
 RAG-based research assistant for organized crime, violence, and Latin American politics. Built on a corpus of 304 academic papers indexed via ChromaDB.
@@ -20,6 +9,11 @@ RAG-based research assistant for organized crime, violence, and Latin American p
 - **Literature Synthesis** -- Generate comprehensive literature reviews
 - **Research Review** -- Analyze drafts against the literature corpus
 
-## Access
+## Deployment
 
-This space is password-protected. Contact the maintainer for access credentials.
+Deployed via [Streamlit Community Cloud](https://share.streamlit.io). Password-protected.
+
+### Secrets required (set in Streamlit Cloud dashboard)
+
+- `ANTHROPIC_API_KEY` -- Anthropic API key
+- `ACCESS_PASSWORD` -- Access code shared with collaborators

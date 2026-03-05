@@ -1,5 +1,5 @@
 """
-Main Streamlit application for Literature Expert Agent (HuggingFace Spaces).
+Main Streamlit application for Literature Expert Agent (Streamlit Cloud).
 """
 
 import os
