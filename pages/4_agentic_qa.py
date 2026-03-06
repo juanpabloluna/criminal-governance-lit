@@ -143,8 +143,8 @@ if st.button("Ask Question", type="primary"):
                     f"Authors detected: **{', '.join(detected)}** "
                     f"(note: the agentic engine runs its own search strategy)"
                 )
-        except Exception:
-            pass
+        except (AttributeError, Exception):
+            pass  # Stale cached Retriever or other init error
 
         with st.spinner("Claude is researching your question..."):
             # Get answer

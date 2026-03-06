@@ -132,11 +132,14 @@ def main():
 
         # Generate review
         if generate_button and topic:
-            detected = synthesis_engine.retriever._detect_author_names(topic)
-            if detected:
-                st.info(f"Author-aware search activated for: **{', '.join(detected)}**")
-            if len(synthesis_engine.retriever._author_lookup) == 0:
-                st.warning("Author index is empty — hybrid retrieval disabled. Try clearing cache on the home page.")
+            try:
+                detected = synthesis_engine.retriever._detect_author_names(topic)
+                if detected:
+                    st.info(f"Author-aware search activated for: **{', '.join(detected)}**")
+                if len(synthesis_engine.retriever._author_lookup) == 0:
+                    st.warning("Author index is empty — hybrid retrieval disabled. Try clearing cache on the home page.")
+            except AttributeError:
+                pass  # Stale cached engine without hybrid retrieval
 
             with st.spinner("🔍 Generating literature review... This may take 1-2 minutes..."):
                 try:
