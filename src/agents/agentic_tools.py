@@ -27,7 +27,7 @@ class AgenticRAGTools:
         self.vector_store = VectorStore()
         try:
             self.zotero_reader = ZoteroReader()
-        except (FileNotFoundError, ValueError, AttributeError):
+        except Exception:
             self.zotero_reader = None
             logger.warning("ZoteroReader unavailable (no Zotero DB) — paper details disabled")
         logger.info("Initialized AgenticRAGTools")

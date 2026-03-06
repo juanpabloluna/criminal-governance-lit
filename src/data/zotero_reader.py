@@ -23,6 +23,8 @@ class ZoteroReader:
         self.db_path = db_path or settings.zotero_db_path
         self.storage_path = settings.zotero_storage_path
 
+        if self.db_path is None:
+            raise FileNotFoundError("Zotero database path not configured (ZOTERO_DB_PATH)")
         if not self.db_path.exists():
             raise FileNotFoundError(f"Zotero database not found: {self.db_path}")
 
