@@ -13,6 +13,8 @@ sys.path.insert(0, str(project_root))
 import streamlit as st
 from loguru import logger
 
+from src.utils.auth import require_auth
+require_auth()
 
 st.markdown("## Bibliography")
 st.markdown(

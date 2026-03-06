@@ -19,6 +19,9 @@ import streamlit as st
 import json
 from datetime import datetime
 
+from src.utils.auth import require_auth
+require_auth()
+
 from src.agents.agentic_qa_engine import AgenticQAEngine
 from src.rag.retriever import Retriever
 from src.utils.usage_logger import log_usage

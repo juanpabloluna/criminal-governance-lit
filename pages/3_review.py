@@ -23,6 +23,9 @@ st.set_page_config(
     layout="wide",
 )
 
+from src.utils.auth import require_auth
+require_auth()
+
 
 @st.cache_resource
 def get_review_engine():

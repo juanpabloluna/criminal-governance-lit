@@ -16,6 +16,9 @@ import streamlit as st
 import pandas as pd
 
 from src.utils.usage_logger import read_usage_log
+from src.utils.auth import require_auth
+
+require_auth()
 
 
 def _get_secret(key, default=""):
