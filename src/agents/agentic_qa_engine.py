@@ -10,9 +10,9 @@ This implements agentic RAG where Claude orchestrates its own retrieval strategy
 
 from typing import List, Dict, Any, Optional
 import json
-from anthropic import Anthropic
+from anthropic import Anthropic, NotFoundError, AuthenticationError
 from loguru import logger
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_exponential
 
 from src.agents.agentic_tools import AgenticRAGTools
 from src.config.settings import settings
@@ -182,6 +182,7 @@ When you have gathered sufficient information from the literature, provide your 
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=4, max=10),
+        retry=retry_if_not_exception_type((NotFoundError, AuthenticationError)),
     )
     def _call_claude_with_tools(
         self, system: str, messages: List[Dict[str, Any]]

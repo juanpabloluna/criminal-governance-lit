@@ -3,9 +3,9 @@
 import time
 from typing import List, Optional, Dict
 
-from anthropic import Anthropic
+from anthropic import Anthropic, NotFoundError, AuthenticationError
 from loguru import logger
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_exponential
 
 from src.config.settings import settings
 from src.data.models import LiteratureReview, ZoteroItem
@@ -45,6 +45,7 @@ class SynthesisEngine:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=4, max=10),
+        retry=retry_if_not_exception_type((NotFoundError, AuthenticationError)),
     )
     def _call_claude(self, system: str, user_message: str, max_tokens: int = 4000) -> str:
         """
