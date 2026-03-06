@@ -25,7 +25,11 @@ class AgenticRAGTools:
         """Initialize the tools with access to vector store and Zotero."""
         self.embedding_service = EmbeddingService()
         self.vector_store = VectorStore()
-        self.zotero_reader = ZoteroReader()
+        try:
+            self.zotero_reader = ZoteroReader()
+        except (FileNotFoundError, ValueError, AttributeError):
+            self.zotero_reader = None
+            logger.warning("ZoteroReader unavailable (no Zotero DB) — paper details disabled")
         logger.info("Initialized AgenticRAGTools")
 
     def get_tool_definitions(self) -> List[Dict[str, Any]]:
@@ -206,6 +210,8 @@ class AgenticRAGTools:
     def _get_paper_details(self, item_id: int) -> Dict[str, Any]:
         """Get detailed metadata about a specific paper."""
         try:
+            if not self.zotero_reader:
+                return {"error": "Paper details not available (Zotero DB not configured)"}
             item = self.zotero_reader.get_item_by_id(item_id)
 
             if not item:
@@ -231,6 +237,8 @@ class AgenticRAGTools:
     def _list_collections(self) -> Dict[str, Any]:
         """List all available collections."""
         try:
+            if not self.zotero_reader:
+                return {"error": "Collection listing not available (Zotero DB not configured)"}
             collections = self.zotero_reader.get_collections()
             return {
                 "collections": [c["collectionName"] for c in collections],

@@ -14,7 +14,7 @@ import streamlit as st
 from loguru import logger
 
 # Bump this on every deploy to force cache invalidation
-_APP_VERSION = "3.0_hybrid_fix"
+_APP_VERSION = "3.1_agentic_fix"
 
 # Page configuration — must be the first Streamlit command
 st.set_page_config(
