@@ -11,7 +11,7 @@ from src.data.models import RetrievalResult, ZoteroItem
 class ContextBuilder:
     """Build context from retrieved chunks for LLM."""
 
-    def __init__(self, max_context_length: int = 15000):
+    def __init__(self, max_context_length: int = 20000):
         """
         Initialize context builder.
 

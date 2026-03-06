@@ -94,11 +94,11 @@ class Settings(BaseSettings):
 
     # Retrieval Configuration
     top_k: int = Field(
-        default=10,
+        default=15,
         description="Number of chunks to retrieve for Q&A",
     )
     similarity_threshold: float = Field(
-        default=0.5,
+        default=0.3,
         description="Minimum similarity score for retrieval",
     )
 

@@ -145,6 +145,7 @@ class VectorStore:
         collections: Optional[List[str]] = None,
         min_year: Optional[int] = None,
         max_year: Optional[int] = None,
+        author_names: Optional[List[str]] = None,
     ) -> List[RetrievalResult]:
         """
         Query using text (will generate embedding automatically).
@@ -156,12 +157,13 @@ class VectorStore:
             collections: Filter by collection names
             min_year: Minimum publication year
             max_year: Maximum publication year
+            author_names: Author last names to boost in results
 
         Returns:
             List of RetrievalResult objects
         """
-        # Generate embedding
-        query_embedding = embedding_service.embed_text(query_text)
+        # Generate embedding once
+        query_embedding = embedding_service.embed_text(query_text).tolist()
 
         # Build metadata filters
         where_filters = {}
@@ -174,15 +176,24 @@ class VectorStore:
             else:
                 where_filters["year"] = {"$lte": max_year}
 
-        # Collection filter (check if collections field contains any of the specified collections)
-        # Note: ChromaDB doesn't have great support for "contains" on string fields
-        # We'll filter in post-processing if needed
+        where = where_filters if where_filters else None
         collections_filter = collections
 
+        # --- Hybrid retrieval when author names are detected ---
+        if author_names:
+            return self._hybrid_author_query(
+                query_embedding=query_embedding,
+                author_names=author_names,
+                n_results=n_results,
+                where=where,
+                collections_filter=collections_filter,
+            )
+
+        # --- Standard semantic retrieval ---
         results = self.query(
-            query_embedding=query_embedding.tolist(),
+            query_embedding=query_embedding,
             n_results=n_results if not collections_filter else n_results * 3,
-            where=where_filters if where_filters else None,
+            where=where,
         )
 
         # Post-filter by collections if specified
@@ -199,6 +210,83 @@ class VectorStore:
             return filtered_results
 
         return results
+
+    def _hybrid_author_query(
+        self,
+        query_embedding: List[float],
+        author_names: List[str],
+        n_results: int,
+        where: Optional[Dict[str, Any]] = None,
+        collections_filter: Optional[List[str]] = None,
+    ) -> List[RetrievalResult]:
+        """
+        Hybrid retrieval combining semantic search with author-focused retrieval.
+
+        Three-pronged approach:
+        1. Semantic search (standard)
+        2. Text search (where_document $contains author name)
+        3. Post-filter semantic results for author metadata matches
+
+        Results are merged with author-matched results prioritized.
+        """
+        # 1. Standard semantic query (fetch more to allow for author filtering)
+        semantic_results = self.query(
+            query_embedding=query_embedding,
+            n_results=n_results * 3,
+            where=where,
+        )
+
+        # 2. Author text search using where_document
+        author_text_results = []
+        for name in author_names:
+            try:
+                text_results = self.query(
+                    query_embedding=query_embedding,
+                    n_results=n_results,
+                    where=where,
+                    where_document={"$contains": name},
+                )
+                author_text_results.extend(text_results)
+            except Exception as e:
+                logger.warning(f"Author text search failed for '{name}': {e}")
+
+        # 3. Merge with author-matched results first
+        seen_ids = set()
+        merged = []
+
+        # Priority 1: Semantic results where author is in metadata
+        for r in semantic_results:
+            authors_str = ";".join(r.chunk.authors).lower()
+            if any(name.lower() in authors_str for name in author_names):
+                if r.chunk.chunk_id not in seen_ids:
+                    merged.append(r)
+                    seen_ids.add(r.chunk.chunk_id)
+
+        # Priority 2: Text-match results (chunks that mention the author)
+        for r in author_text_results:
+            if r.chunk.chunk_id not in seen_ids:
+                merged.append(r)
+                seen_ids.add(r.chunk.chunk_id)
+
+        # Priority 3: Remaining semantic results
+        for r in semantic_results:
+            if r.chunk.chunk_id not in seen_ids:
+                merged.append(r)
+                seen_ids.add(r.chunk.chunk_id)
+
+        # Post-filter by collections if specified
+        if collections_filter:
+            merged = [
+                r for r in merged
+                if any(coll in r.chunk.collections for coll in collections_filter)
+            ]
+
+        logger.info(
+            f"Hybrid author query: {len(merged)} results "
+            f"(authors detected: {author_names})"
+        )
+
+        return merged[:n_results * 2]  # Return extra for diversity ranking
 
     def get_by_id(self, chunk_id: str) -> Optional[DocumentChunk]:
         """Get a specific chunk by its ID."""

@@ -1,6 +1,9 @@
 """Retrieval engine for querying the vector database."""
 
-from typing import List, Optional
+import json
+import re
+from pathlib import Path
+from typing import List, Optional, Set
 
 from loguru import logger
 
@@ -31,8 +34,43 @@ class Retriever:
         self.vector_store = vector_store or VectorStore()
         self.embedding_service = embedding_service or EmbeddingService()
         self.context_builder = context_builder or ContextBuilder()
+        self._author_index = self._load_author_index()
 
-        logger.info("Retriever initialized")
+        logger.info(
+            f"Retriever initialized (author index: {len(self._author_index)} names)"
+        )
+
+    def _load_author_index(self) -> Set[str]:
+        """Load known author last names from papers_metadata.json."""
+        metadata_path = (
+            Path(__file__).parent.parent.parent / "data" / "papers_metadata.json"
+        )
+        try:
+            with open(metadata_path) as f:
+                records = json.load(f)
+            last_names = set()
+            for r in records:
+                for author in r.get("authors", []):
+                    if "," in author:
+                        name = author.split(",")[0].strip()
+                    else:
+                        parts = author.split()
+                        name = parts[-1].strip() if parts else ""
+                    if len(name) > 2:
+                        last_names.add(name)
+            logger.debug(f"Loaded {len(last_names)} author last names for detection")
+            return last_names
+        except Exception as e:
+            logger.warning(f"Could not load author index: {e}")
+            return set()
+
+    def _detect_author_names(self, query: str) -> List[str]:
+        """Detect author last names mentioned in the query."""
+        words = re.findall(r"\b[A-Z][a-z]{2,}\b", query)
+        detected = [w for w in words if w in self._author_index]
+        if detected:
+            logger.info(f"Detected author names in query: {detected}")
+        return detected
 
     def retrieve(
         self,
@@ -45,6 +83,9 @@ class Retriever:
     ) -> List[RetrievalResult]:
         """
         Retrieve relevant chunks for a query.
+
+        Automatically detects author names and uses hybrid retrieval
+        (semantic + author-focused) when authors are mentioned.
 
         Args:
             query: Query text
@@ -61,7 +102,10 @@ class Retriever:
 
         logger.info(f"Retrieving documents for query: {query[:100]}...")
 
-        # Query vector store
+        # Detect author names for hybrid retrieval
+        author_names = self._detect_author_names(query)
+
+        # Query vector store (hybrid if authors detected)
         results = self.vector_store.query_by_text(
             query_text=query,
             embedding_service=self.embedding_service,
@@ -69,6 +113,7 @@ class Retriever:
             collections=collections,
             min_year=min_year,
             max_year=max_year,
+            author_names=author_names if author_names else None,
         )
 
         if not results:
