@@ -20,6 +20,7 @@ import json
 from datetime import datetime
 
 from src.agents.agentic_qa_engine import AgenticQAEngine
+from src.rag.retriever import Retriever
 from src.utils.usage_logger import log_usage
 
 
@@ -125,10 +126,26 @@ question = st.text_area(
     height=100,
 )
 
+@st.cache_resource
+def _get_retriever_for_detection():
+    """Retriever used only for author name detection."""
+    return Retriever()
+
 if st.button("Ask Question", type="primary"):
     if not question:
         st.warning("Please enter a question")
     else:
+        try:
+            _retr = _get_retriever_for_detection()
+            detected = _retr._detect_author_names(question)
+            if detected:
+                st.info(
+                    f"Authors detected: **{', '.join(detected)}** "
+                    f"(note: the agentic engine runs its own search strategy)"
+                )
+        except Exception:
+            pass
+
         with st.spinner("Claude is researching your question..."):
             # Get answer
             result = engine.answer_question(

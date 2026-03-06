@@ -1,7 +1,9 @@
 """
-Usage Log page - View who has used the system and what they queried.
+Usage Log page - Admin-only view of who used the system and what they queried.
+Requires a separate ADMIN_PASSWORD secret.
 """
 
+import os
 import sys
 from pathlib import Path
 
@@ -14,6 +16,44 @@ import streamlit as st
 import pandas as pd
 
 from src.utils.usage_logger import read_usage_log
+
+
+def _get_secret(key, default=""):
+    val = os.environ.get(key, "")
+    if not val:
+        try:
+            val = st.secrets.get(key, "")
+        except Exception:
+            val = ""
+    return val or default
+
+
+# --- Admin gate ---
+def check_admin():
+    admin_pw = _get_secret("ADMIN_PASSWORD")
+    if not admin_pw:
+        st.error("ADMIN_PASSWORD secret is not configured. Usage log is disabled.")
+        return False
+
+    if st.session_state.get("admin_authenticated"):
+        return True
+
+    st.markdown("## Usage Log (Admin)")
+    st.markdown("This page is restricted to the system administrator.")
+    pw = st.text_input("Admin password", type="password", key="admin_pw_input")
+    if st.button("Unlock", type="primary"):
+        if pw == admin_pw:
+            st.session_state["admin_authenticated"] = True
+            st.rerun()
+        else:
+            st.error("Incorrect admin password.")
+    return False
+
+
+if not check_admin():
+    st.stop()
+
+# --- Log viewer (only after admin auth) ---
 
 st.markdown("## Usage Log")
 st.markdown("Record of queries submitted to the system.")
