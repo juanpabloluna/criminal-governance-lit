@@ -3,7 +3,7 @@
 import json
 import re
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import Dict, List, Optional, Set
 
 from loguru import logger
 
@@ -34,21 +34,35 @@ class Retriever:
         self.vector_store = vector_store or VectorStore()
         self.embedding_service = embedding_service or EmbeddingService()
         self.context_builder = context_builder or ContextBuilder()
-        self._author_index = self._load_author_index()
+        self._author_lookup: Dict[str, str] = {}  # lowercase → canonical
+        self._load_author_index()
 
         logger.info(
-            f"Retriever initialized (author index: {len(self._author_index)} names)"
+            f"Retriever initialized (author index: {len(self._author_lookup)} names)"
         )
 
-    def _load_author_index(self) -> Set[str]:
+    def _load_author_index(self) -> None:
         """Load known author last names from papers_metadata.json."""
-        metadata_path = (
-            Path(__file__).parent.parent.parent / "data" / "papers_metadata.json"
-        )
+        # Try multiple paths for robustness across local/cloud
+        candidates = [
+            Path(__file__).parent.parent.parent / "data" / "papers_metadata.json",
+            Path.cwd() / "data" / "papers_metadata.json",
+        ]
+        metadata_path = None
+        for p in candidates:
+            if p.exists():
+                metadata_path = p
+                break
+
+        if not metadata_path:
+            logger.warning(
+                f"papers_metadata.json not found. Tried: {[str(p) for p in candidates]}"
+            )
+            return
+
         try:
             with open(metadata_path) as f:
                 records = json.load(f)
-            last_names = set()
             for r in records:
                 for author in r.get("authors", []):
                     if "," in author:
@@ -57,17 +71,24 @@ class Retriever:
                         parts = author.split()
                         name = parts[-1].strip() if parts else ""
                     if len(name) > 2:
-                        last_names.add(name)
-            logger.debug(f"Loaded {len(last_names)} author last names for detection")
-            return last_names
+                        self._author_lookup[name.lower()] = name
+            logger.info(
+                f"Loaded {len(self._author_lookup)} author last names from {metadata_path}"
+            )
         except Exception as e:
             logger.warning(f"Could not load author index: {e}")
-            return set()
 
     def _detect_author_names(self, query: str) -> List[str]:
-        """Detect author last names mentioned in the query."""
-        words = re.findall(r"\b[A-Z][a-z]{2,}\b", query)
-        detected = [w for w in words if w in self._author_index]
+        """Detect author last names in the query (case-insensitive)."""
+        # Extract all words of 3+ alphabetic chars
+        words = re.findall(r"\b[a-zA-Z]{3,}\b", query)
+        detected = []
+        seen = set()
+        for word in words:
+            key = word.lower()
+            if key in self._author_lookup and key not in seen:
+                detected.append(self._author_lookup[key])  # canonical form
+                seen.add(key)
         if detected:
             logger.info(f"Detected author names in query: {detected}")
         return detected

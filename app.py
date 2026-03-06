@@ -151,6 +151,13 @@ def main():
         """)
 
         st.markdown("---")
+
+        if st.button("Clear cache & reload", use_container_width=True,
+                      help="Force reload of all engines after a code update"):
+            st.cache_resource.clear()
+            st.rerun()
+
+        st.markdown("---")
         st.markdown("### About")
         st.markdown("""
         This agent helps you query a corpus of 304 academic papers

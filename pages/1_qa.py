@@ -165,6 +165,14 @@ def main():
 
     # Process question
     if ask_button and question:
+        # Show author detection feedback
+        detected = qa_engine.retriever._detect_author_names(question)
+        if detected:
+            st.info(f"Author-aware search activated for: **{', '.join(detected)}**")
+        idx_size = len(qa_engine.retriever._author_lookup)
+        if idx_size == 0:
+            st.warning("Author index is empty — hybrid retrieval disabled. Try clearing cache.")
+
         with st.spinner("🤔 Thinking... Retrieving relevant papers and generating answer..."):
             try:
                 # Generate answer
