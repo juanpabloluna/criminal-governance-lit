@@ -40,43 +40,131 @@ def get_all_papers():
         return {}
 
 
+def _format_authors(authors):
+    """Format author list in APA style."""
+    if not authors:
+        return "Unknown"
+    elif len(authors) == 1:
+        return authors[0]
+    elif len(authors) == 2:
+        return f"{authors[0]} & {authors[1]}"
+    elif len(authors) <= 20:
+        return ", ".join(authors[:-1]) + f", & {authors[-1]}"
+    else:
+        return ", ".join(authors[:19]) + f", ... {authors[-1]}"
+
+
+def _format_doi_or_url(doi, url):
+    """Format DOI link or URL."""
+    if doi:
+        return doi if doi.startswith("http") else f"https://doi.org/{doi}"
+    elif url:
+        return url
+    return None
+
+
 def format_apa(paper):
-    """Format a paper entry in APA 7th edition style."""
+    """Format a paper entry in APA 7th edition style, by item type."""
     authors = paper.get("authors", [])
     year = paper.get("year")
     title = paper.get("title", "Untitled")
-    publication = paper.get("publication")
-    doi = paper.get("doi")
-    url = paper.get("url")
+    item_type = paper.get("item_type", "journalArticle")
 
-    # Authors
-    if not authors:
-        author_str = "Unknown"
-    elif len(authors) == 1:
-        author_str = authors[0]
-    elif len(authors) == 2:
-        author_str = f"{authors[0]} & {authors[1]}"
-    elif len(authors) <= 20:
-        author_str = ", ".join(authors[:-1]) + f", & {authors[-1]}"
-    else:
-        author_str = ", ".join(authors[:19]) + f", ... {authors[-1]}"
-
-    # Year
+    author_str = _format_authors(authors)
     year_str = f"({year})" if year else "(n.d.)"
+    link = _format_doi_or_url(paper.get("doi"), paper.get("url"))
 
-    # Build citation
-    parts = [f"{author_str} {year_str}. {title}."]
+    if item_type == "journalArticle":
+        # Author(s) (Year). Title. *Journal*, *Volume*(Issue), Pages. DOI
+        pub = paper.get("publication")
+        vol = paper.get("volume")
+        issue = paper.get("issue")
+        pages = paper.get("pages")
 
-    if publication:
-        parts.append(f"*{publication}*.")
+        parts = [f"{author_str} {year_str}. {title}."]
+        if pub:
+            journal_part = f"*{pub}*"
+            if vol:
+                journal_part += f", *{vol}*"
+                if issue:
+                    journal_part += f"({issue})"
+            if pages:
+                journal_part += f", {pages}"
+            parts.append(journal_part + ".")
+        if link:
+            parts.append(link)
+        return " ".join(parts)
 
-    if doi:
-        doi_url = doi if doi.startswith("http") else f"https://doi.org/{doi}"
-        parts.append(doi_url)
-    elif url:
-        parts.append(url)
+    elif item_type == "book":
+        # Author(s) (Year). *Title* (Edition). Publisher.
+        publisher = paper.get("publisher")
+        edition = paper.get("edition")
+        place = paper.get("place")
 
-    return " ".join(parts)
+        title_part = f"*{title}*"
+        if edition:
+            title_part += f" ({edition})"
+
+        parts = [f"{author_str} {year_str}. {title_part}."]
+        if publisher:
+            pub_str = f"{place}: {publisher}" if place else publisher
+            parts.append(f"{pub_str}.")
+        if link:
+            parts.append(link)
+        return " ".join(parts)
+
+    elif item_type == "bookSection":
+        # Author(s) (Year). Chapter title. In Editor(s), *Book title* (pp. Pages). Publisher. DOI
+        book_title = paper.get("book_title")
+        publisher = paper.get("publisher")
+        pages = paper.get("pages")
+
+        parts = [f"{author_str} {year_str}. {title}."]
+        if book_title:
+            bt = f"In *{book_title}*"
+            if pages:
+                bt += f" (pp. {pages})"
+            parts.append(bt + ".")
+        if publisher:
+            parts.append(f"{publisher}.")
+        if link:
+            parts.append(link)
+        return " ".join(parts)
+
+    elif item_type == "report":
+        # Author(s) (Year). *Title*. Publisher/Organization.
+        publisher = paper.get("publisher")
+        parts = [f"{author_str} {year_str}. *{title}*."]
+        if publisher:
+            parts.append(f"{publisher}.")
+        if link:
+            parts.append(link)
+        return " ".join(parts)
+
+    elif item_type == "thesis":
+        # Author (Year). *Title* [Doctoral dissertation/Master's thesis, University].
+        publisher = paper.get("publisher")
+        parts = [f"{author_str} {year_str}. *{title}*"]
+        if publisher:
+            parts[-1] += f" [{publisher}]."
+        else:
+            parts[-1] += "."
+        if link:
+            parts.append(link)
+        return " ".join(parts)
+
+    else:
+        # Fallback: generic format
+        publisher = paper.get("publisher")
+        publication = paper.get("publication")
+        parts = [f"{author_str} {year_str}. {title}."]
+        if publication:
+            parts.append(f"*{publication}*.")
+        elif publisher:
+            parts.append(f"{publisher}.")
+        if link:
+            parts.append(link)
+        return " ".join(parts)
 
 
 papers = get_all_papers()
