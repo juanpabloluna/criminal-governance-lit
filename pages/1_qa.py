@@ -93,6 +93,17 @@ def main():
     with st.sidebar:
         st.markdown("### Query Settings")
 
+        # Author index diagnostic
+        try:
+            idx_size = len(qa_engine.retriever._author_lookup)
+            if idx_size > 0:
+                st.caption(f"Author index: {idx_size} names loaded")
+            else:
+                st.warning("Author index empty — author-aware search disabled")
+        except AttributeError:
+            st.warning("Hybrid retrieval not available (clear cache)")
+
+
         # Collection filter
         st.markdown("**Filter by Collections**")
         collection_options = ["All Collections", "Specific Collections"]
@@ -170,10 +181,10 @@ def main():
             detected = qa_engine.retriever._detect_author_names(question)
             if detected:
                 st.info(f"Author-aware search activated for: **{', '.join(detected)}**")
-            if len(qa_engine.retriever._author_lookup) == 0:
-                st.warning("Author index is empty — hybrid retrieval disabled. Try clearing cache.")
+            else:
+                st.caption("No author names detected in query — using semantic search")
         except AttributeError:
-            pass  # Stale cached engine without hybrid retrieval
+            st.caption("Author detection unavailable")
 
         with st.spinner("🤔 Thinking... Retrieving relevant papers and generating answer..."):
             try:

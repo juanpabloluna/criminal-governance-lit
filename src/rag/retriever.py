@@ -47,6 +47,8 @@ class Retriever:
         candidates = [
             Path(__file__).parent.parent.parent / "data" / "papers_metadata.json",
             Path.cwd() / "data" / "papers_metadata.json",
+            settings.chromadb_path.parent / "papers_metadata.json",
+            Path("/mount/src/criminal-governance-lit/data/papers_metadata.json"),
         ]
         metadata_path = None
         for p in candidates:
