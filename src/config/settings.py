@@ -52,7 +52,7 @@ class Settings(BaseSettings):
         description="Sentence-transformers model for embeddings",
     )
     llm_model: str = Field(
-        default="claude-3-haiku-20240307",
+        default="claude-sonnet-4-20250514",
         description="Claude model for text generation",
     )
 
