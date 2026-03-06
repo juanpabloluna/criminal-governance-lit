@@ -245,15 +245,15 @@ class VectorStore:
         """Get statistics about the vector store."""
         count = self.count()
 
-        # Get a sample to analyze metadata
-        sample = self.collection.peek(limit=100)
+        # Get ALL metadata to compute accurate stats
+        all_data = self.collection.get(include=["metadatas"])
 
         unique_items = set()
         unique_collections = set()
         years = []
 
-        if sample and sample["metadatas"]:
-            for metadata in sample["metadatas"]:
+        if all_data and all_data["metadatas"]:
+            for metadata in all_data["metadatas"]:
                 unique_items.add(metadata.get("item_id"))
                 if metadata.get("collections"):
                     for coll in metadata["collections"].split(";"):
