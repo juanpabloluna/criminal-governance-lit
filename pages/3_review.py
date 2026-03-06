@@ -14,6 +14,7 @@ from loguru import logger
 
 from src.agents.review_engine import ReviewEngine
 from src.rag.retriever import Retriever
+from src.utils.usage_logger import log_usage
 
 
 st.set_page_config(
@@ -156,6 +157,13 @@ def main():
                         st.success(f"✅ Review completed in {report.generation_time:.2f} seconds!")
                         st.info("Switch to the 'Results' tab to see your feedback.")
 
+                        log_usage(
+                            user=st.session_state.get("user_name", "unknown"),
+                            page="review",
+                            query=draft_text[:200],
+                            extra={"type": "full_review", "claims": len(report.claim_reviews)},
+                        )
+
                     except Exception as e:
                         st.error(f"❌ Error generating review: {e}")
                         logger.error(f"Error in review: {e}", exc_info=True)
@@ -171,6 +179,13 @@ def main():
                         st.session_state.quick_check = check_result
                         st.success("✅ Citation check completed!")
                         st.info("Switch to the 'Results' tab to see the results.")
+
+                        log_usage(
+                            user=st.session_state.get("user_name", "unknown"),
+                            page="review",
+                            query=draft_text[:200],
+                            extra={"type": "citation_check"},
+                        )
 
                     except Exception as e:
                         st.error(f"❌ Error in citation check: {e}")

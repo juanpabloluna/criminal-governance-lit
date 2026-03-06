@@ -35,22 +35,29 @@ def _get_secret(key, default=""):
 
 # --- Password gate ---
 def check_password():
-    """Simple password gate for access control."""
+    """Password gate with user identification."""
     access_password = _get_secret("ACCESS_PASSWORD")
     if not access_password:
         # No password configured — allow access (local dev)
+        if "user_name" not in st.session_state:
+            st.session_state["user_name"] = "local_dev"
         return True
 
     if st.session_state.get("authenticated"):
         return True
 
     st.markdown("## Criminal Governance Literature Expert")
-    st.markdown("This application is password-protected. Enter the access code to continue.")
+    st.markdown("This application is password-protected. Enter your name and the access code to continue.")
 
+    user_name = st.text_input("Your name", key="login_name_input",
+                              placeholder="e.g. Juan Pablo Luna")
     password = st.text_input("Access code", type="password", key="password_input")
     if st.button("Enter", type="primary"):
-        if password == access_password:
+        if not user_name.strip():
+            st.error("Please enter your name.")
+        elif password == access_password:
             st.session_state["authenticated"] = True
+            st.session_state["user_name"] = user_name.strip()
             st.rerun()
         else:
             st.error("Incorrect access code.")

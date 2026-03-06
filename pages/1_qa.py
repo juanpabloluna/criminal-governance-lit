@@ -14,6 +14,7 @@ from loguru import logger
 
 from src.agents.qa_engine import QAEngine
 from src.rag.retriever import Retriever
+from src.utils.usage_logger import log_usage
 
 
 st.set_page_config(
@@ -192,6 +193,13 @@ def main():
                 })
 
                 st.success(f"✅ Answer generated in {answer.generation_time:.2f} seconds!")
+
+                log_usage(
+                    user=st.session_state.get("user_name", "unknown"),
+                    page="qa",
+                    query=question,
+                    extra={"sources": len(answer.sources), "time": round(answer.generation_time, 2)},
+                )
 
             except Exception as e:
                 st.error(f"❌ Error generating answer: {e}")

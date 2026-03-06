@@ -20,6 +20,7 @@ import json
 from datetime import datetime
 
 from src.agents.agentic_qa_engine import AgenticQAEngine
+from src.utils.usage_logger import log_usage
 
 
 # Page styling
@@ -135,6 +136,13 @@ if st.button("Ask Question", type="primary"):
                 collections=collections,
                 verbose=verbose_mode,
             )
+
+        log_usage(
+            user=st.session_state.get("user_name", "unknown"),
+            page="agentic_qa",
+            query=question,
+            extra={"iterations": result.get("iterations", 0), "sources": len(result.get("sources", []))},
+        )
 
         # Display results
         st.markdown("---")
