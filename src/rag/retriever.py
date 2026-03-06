@@ -78,14 +78,28 @@ class Retriever:
         except Exception as e:
             logger.warning(f"Could not load author index: {e}")
 
+    # Common English words that collide with author last names in the corpus
+    _AUTHOR_STOPWORDS = frozenset({
+        "main", "fair", "green", "young", "long", "black", "white", "cross",
+        "strong", "short", "rich", "price", "key", "grant", "mark", "frank",
+        "rose", "stone", "wolf", "hunt", "page", "ward", "lane", "lee",
+        "ray", "wade", "reed", "cook", "duke", "ford", "clay", "cole",
+        "bond", "camp", "marsh", "wells", "miles", "mason", "foster",
+        "taylor", "morris", "moore", "lynch", "levy", "stein", "neal",
+        "the", "and", "are", "for", "not", "but", "can", "had", "has",
+        "his", "how", "its", "may", "new", "now", "old", "way", "who",
+        "any", "few", "use", "per", "yet", "war",
+    })
+
     def _detect_author_names(self, query: str) -> List[str]:
         """Detect author last names in the query (case-insensitive)."""
-        # Extract all words of 3+ alphabetic chars
         words = re.findall(r"\b[a-zA-Z]{3,}\b", query)
         detected = []
         seen = set()
         for word in words:
             key = word.lower()
+            if key in self._AUTHOR_STOPWORDS:
+                continue
             if key in self._author_lookup and key not in seen:
                 detected.append(self._author_lookup[key])  # canonical form
                 seen.add(key)

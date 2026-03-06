@@ -13,6 +13,9 @@ sys.path.insert(0, str(project_root))
 import streamlit as st
 from loguru import logger
 
+# Bump this on every deploy to force cache invalidation
+_APP_VERSION = "3.0_hybrid_fix"
+
 # Page configuration — must be the first Streamlit command
 st.set_page_config(
     page_title="Criminal Governance Literature Expert",
@@ -20,6 +23,11 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# Auto-clear stale cache after deploy
+if st.session_state.get("_app_version") != _APP_VERSION:
+    st.cache_resource.clear()
+    st.session_state["_app_version"] = _APP_VERSION
 
 
 def _get_secret(key, default=""):

@@ -180,8 +180,9 @@ class RetrievalResult(BaseModel):
             pdf_path=metadata.get("pdf_path"),
         )
 
-        # Convert distance to similarity (assuming cosine distance)
-        similarity = 1 - distance if distance <= 1 else 0
+        # Convert L2 distance to similarity score (0-1 range)
+        # L2 distances for normalized embeddings range ~0-2
+        similarity = max(0.0, 1 - distance / 2)
 
         return cls(chunk=chunk, distance=distance, similarity=similarity)
 
