@@ -27,12 +27,20 @@ from src.utils.auth import require_auth
 require_auth()
 
 
+from src.utils.user_key import require_user_api_key
+_user_api_key = require_user_api_key()
+
+
 @st.cache_resource
+def get_retriever():
+    """Initialize and cache the retriever (shared across sessions; holds no key)."""
+    return Retriever()
+
+
 def get_synthesis_engine():
-    """Initialize and cache the synthesis engine."""
+    """Build a synthesis engine bound to this visitor's own API key."""
     try:
-        retriever = Retriever()
-        return SynthesisEngine(retriever=retriever)
+        return SynthesisEngine(retriever=get_retriever(), api_key=_user_api_key)
     except Exception as e:
         st.error(f"Error initializing synthesis engine: {e}")
         logger.error(f"Failed to initialize synthesis engine: {e}", exc_info=True)

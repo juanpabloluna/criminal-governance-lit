@@ -15,5 +15,13 @@ Deployed via [Streamlit Community Cloud](https://share.streamlit.io). Password-p
 
 ### Secrets required (set in Streamlit Cloud dashboard)
 
-- `ANTHROPIC_API_KEY` -- Anthropic API key
-- `ACCESS_PASSWORD` -- Access code shared with collaborators
+- `ACCESS_PASSWORD` -- General access code. Visitors who enter with it bring
+  their own Anthropic API key (sidebar field; kept only in their browser
+  session, never stored on the server).
+- `SPONSOR_PASSWORD` -- Privileged access code for the owner, close
+  collaborators, and RAs. Sessions opened with it run on the server-side
+  `ANTHROPIC_API_KEY` (the owner pays).
+- `ANTHROPIC_API_KEY` -- The owner's key; used only by sponsored sessions.
+- `ADMIN_PASSWORD` -- Unlocks the usage-log page.
+
+Corpus search and the bibliography work without any API key.

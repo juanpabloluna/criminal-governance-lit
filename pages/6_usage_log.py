@@ -60,6 +60,11 @@ if not check_admin():
 
 st.markdown("## Usage Log")
 st.markdown("Record of queries submitted to the system.")
+st.warning(
+    "Streamlit Cloud storage is ephemeral: this log is erased whenever the app "
+    "restarts, redeploys, or wakes from sleep. Download it regularly (button at "
+    "the bottom) to keep a cumulative record."
+)
 
 entries = read_usage_log()
 
@@ -107,9 +112,11 @@ if selected_page != "All":
 st.markdown(f"Showing **{len(filtered)}** of {len(df)} entries")
 
 # Display table
-display_df = filtered[["timestamp", "user", "page", "query"]].copy()
+if "tier" not in filtered.columns:
+    filtered["tier"] = "unknown"
+display_df = filtered[["timestamp", "user", "tier", "page", "query"]].copy()
 display_df["timestamp"] = display_df["timestamp"].dt.strftime("%Y-%m-%d %H:%M")
-display_df.columns = ["Time", "User", "Page", "Query"]
+display_df.columns = ["Time", "User", "Tier", "Page", "Query"]
 st.dataframe(display_df, use_container_width=True, hide_index=True)
 
 # Export

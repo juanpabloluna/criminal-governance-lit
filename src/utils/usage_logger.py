@@ -27,9 +27,16 @@ def log_usage(
         query: The query or topic submitted.
         extra: Optional dict with additional info (e.g. filters used).
     """
+    try:
+        import streamlit as st
+        tier = "sponsored" if st.session_state.get("sponsored") else "own_key"
+    except Exception:
+        tier = "unknown"
+
     entry = {
         "timestamp": datetime.utcnow().isoformat() + "Z",
         "user": user,
+        "tier": tier,
         "page": page,
         "query": query,
     }

@@ -29,11 +29,16 @@ class AgenticQAEngine:
     - Decide when it has enough information
     """
 
-    def __init__(self):
-        """Initialize the agentic Q&A engine."""
-        self.client = Anthropic(api_key=settings.anthropic_api_key)
+    def __init__(self, api_key=None, tools=None):
+        """Initialize the agentic Q&A engine.
+
+        Args:
+            api_key: Anthropic API key (falls back to settings if None)
+            tools: AgenticRAGTools instance to reuse (creates new if None)
+        """
+        self.client = Anthropic(api_key=api_key or settings.anthropic_api_key)
         self.model = settings.llm_model
-        self.tools = AgenticRAGTools()
+        self.tools = tools or AgenticRAGTools()
         self.max_iterations = 5  # Prevent infinite loops
 
         logger.info(f"Initialized AgenticQAEngine with model: {self.model}")

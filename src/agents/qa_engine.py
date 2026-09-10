@@ -21,6 +21,7 @@ class QAEngine:
         self,
         retriever: Optional[Retriever] = None,
         context_builder: Optional[ContextBuilder] = None,
+        api_key: Optional[str] = None,
     ):
         """
         Initialize QA engine.
@@ -33,7 +34,7 @@ class QAEngine:
         self.context_builder = context_builder or ContextBuilder()
 
         # Initialize Anthropic client
-        self.client = Anthropic(api_key=settings.anthropic_api_key)
+        self.client = Anthropic(api_key=api_key or settings.anthropic_api_key)
         self.model = settings.llm_model
 
         logger.info(f"QA Engine initialized with model: {self.model}")

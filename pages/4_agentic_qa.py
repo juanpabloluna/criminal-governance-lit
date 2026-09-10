@@ -75,11 +75,20 @@ st.markdown(
     """
 )
 
-# Initialize engine
+from src.utils.user_key import require_user_api_key
+_user_api_key = require_user_api_key()
+
+
 @st.cache_resource
+def get_agentic_tools():
+    """Cache the heavy RAG tools (shared across sessions; hold no key)."""
+    from src.agents.agentic_tools import AgenticRAGTools
+    return AgenticRAGTools()
+
+
 def get_agentic_engine():
-    """Get cached agentic Q&A engine."""
-    return AgenticQAEngine()
+    """Build an agentic engine bound to this visitor's own API key."""
+    return AgenticQAEngine(api_key=_user_api_key, tools=get_agentic_tools())
 
 
 try:

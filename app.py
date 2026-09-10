@@ -14,7 +14,7 @@ import streamlit as st
 from loguru import logger
 
 # Bump this on every deploy to force cache invalidation
-_APP_VERSION = "3.2_diagnostics"
+_APP_VERSION = "3.3_byok_tiers"
 
 # Page configuration — must be the first Streamlit command
 st.set_page_config(
@@ -106,6 +106,10 @@ def main():
         '<div class="sub-header">RAG-based research assistant for organized crime, violence, and Latin American politics (304 papers)</div>',
         unsafe_allow_html=True,
     )
+
+    # Per-visitor API key (bring-your-own-key)
+    from src.utils.user_key import render_key_sidebar
+    render_key_sidebar()
 
     # Sidebar
     with st.sidebar:
@@ -220,10 +224,18 @@ ChromaDB: {settings.chromadb_path}
                 st.error(f"Error: {e}")
 
         st.markdown("### API Configuration")
-        if settings.anthropic_api_key and settings.anthropic_api_key != "YOUR_API_KEY_HERE":
-            st.success("Anthropic API key configured")
+        from src.utils.user_key import get_user_api_key, is_sponsored
+        if is_sponsored():
+            st.success("API access covered for this session (sponsored)")
+        elif get_user_api_key():
+            st.success("Your Anthropic API key is set for this session")
         else:
-            st.error("Anthropic API key not configured")
+            st.info(
+                "No API key set. Claude-powered features (Q&A, Agentic Q&A, "
+                "Synthesis, Review) run on your own Anthropic API key -- "
+                "enter it in the sidebar of any of those pages. "
+                "Corpus search and the bibliography work without a key."
+            )
 
     with tab3:
         st.markdown("## Quick Start Guide")
